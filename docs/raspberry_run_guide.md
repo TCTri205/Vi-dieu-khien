@@ -10,8 +10,10 @@ Mở Terminal (macOS/Linux) hoặc PowerShell (Windows) trên Laptop của bạn
 
 ```bash
 # Thay 'vdk-pi.local' bằng IP nếu không nhận dạng được tên máy
-ssh pi@vdk-pi.local
+# ssh pi@vdk-pi.local
+ssh pi@pbl5-pi.local
 ```
+
 *Mật khẩu mặc định: `123456` (nếu chưa đổi).*
 
 ---
@@ -41,10 +43,11 @@ Server đóng vai trò là trung tâm nhận dữ liệu, xử lý Dashboard và
 3. Chạy server:
 
 ```bash
-python start_server.py
+# python start_server.py
+GPIOZERO_PIN_FACTORY=lgpio python start_pi.py
 ```
 
-4. Truy cập Dashboard tại: `http://localhost:8765` hoặc `http://<IP_LAPTOP>:8765`.
+1. Truy cập Dashboard tại: `http://localhost:8765` hoặc `http://<IP_LAPTOP>:8765`.
 
 ---
 
@@ -71,6 +74,7 @@ sudo systemctl restart vdk_pi.service
 ```
 
 Để xem log đang chạy ngầm:
+
 ```bash
 sudo journalctl -u vdk_pi.service -f
 ```
@@ -86,5 +90,6 @@ sudo journalctl -u vdk_pi.service -f
 ---
 
 ## 🔗 Tài liệu tham khảo
+
 - [Hướng dẫn cài đặt chi tiết (Setup Guide)](./raspberry_pi_setup_guide.md)
 - [Cấu hình Systemd Service](./raspberry_pi_setup_guide.md#5-cấu-hình-tự-động-chạy-auto-start)

@@ -1,5 +1,7 @@
 import asyncio
-from gpiozero import AngularServo, OutputDevice, DistanceSensor
+import time
+from gpiozero import AngularServo, OutputDevice, DistanceSensor, TonalBuzzer
+from gpiozero.exc import BadPinFactory
 from src.common.config import Config
 
 class HardwareManager:
@@ -9,7 +11,15 @@ class HardwareManager:
             self.servo = AngularServo(Config.SERVO_PIN, min_pulse_width=0.0005, max_pulse_width=0.0025)
             self.light = OutputDevice(Config.LIGHT_PIN, active_high=True)
             self.motor = OutputDevice(Config.MOTOR_PIN, active_high=False)
-            self.buzzer = OutputDevice(Config.BUZZER_PIN)
+            # Thử TonalBuzzer (passive buzzer), fallback sang OutputDevice (active buzzer)
+            try:
+                self.buzzer = TonalBuzzer(Config.BUZZER_PIN)
+                self._buzzer_type = "tonal"
+                print("  📢 Buzzer: TonalBuzzer (passive)")
+            except Exception:
+                self.buzzer = OutputDevice(Config.BUZZER_PIN)
+                self._buzzer_type = "digital"
+                print("  📢 Buzzer: OutputDevice (active)")
             self._light_task = None
             print("✅ Hardware initialized.")
         except Exception as e:
@@ -19,6 +29,7 @@ class HardwareManager:
             self.light = None
             self.motor = None
             self.buzzer = None
+            self._buzzer_type = None
             self._light_task = None
 
     def get_distance(self):
@@ -29,9 +40,14 @@ class HardwareManager:
     async def beep_welcome(self):
         if self.buzzer:
             print("🔊 Beep: Welcome")
-            self.buzzer.on()
-            await asyncio.sleep(Config.BUZZER_SHORT_BEEP)
-            self.buzzer.off()
+            if self._buzzer_type == "tonal":
+                self.buzzer.play(440)  # A4 note
+                await asyncio.sleep(Config.BUZZER_SHORT_BEEP)
+                self.buzzer.stop()
+            else:
+                self.buzzer.on()
+                await asyncio.sleep(Config.BUZZER_SHORT_BEEP)
+                self.buzzer.off()
         else:
             print("🔊 [Mock] Beep: Welcome")
 
@@ -39,9 +55,14 @@ class HardwareManager:
         if self.buzzer:
             print(f"🔊 Beep: Alert ({Config.BUZZER_ALERT_COUNT} times)")
             for _ in range(Config.BUZZER_ALERT_COUNT):
-                self.buzzer.on()
-                await asyncio.sleep(Config.BUZZER_ALERT_BEEP)
-                self.buzzer.off()
+                if self._buzzer_type == "tonal":
+                    self.buzzer.play(880)  # Higher pitch for alert
+                    await asyncio.sleep(Config.BUZZER_ALERT_BEEP)
+                    self.buzzer.stop()
+                else:
+                    self.buzzer.on()
+                    await asyncio.sleep(Config.BUZZER_ALERT_BEEP)
+                    self.buzzer.off()
                 await asyncio.sleep(Config.BUZZER_ALERT_BEEP)
         else:
             print(f"🔊 [Mock] Beep: Alert ({Config.BUZZER_ALERT_COUNT} times)")
@@ -50,8 +71,12 @@ class HardwareManager:
         if self.servo:
             print(f"🚪 Opening gate for {Config.GATE_HOLD_TIME}s...")
             self.servo.angle = 90
+            print(f"🚪 Servo -> 90° (open)")
             await asyncio.sleep(Config.GATE_HOLD_TIME)
             self.servo.angle = 0
+            print(f"🚪 Servo -> 0° (closed)")
+            # Chờ một chút để xung PWM được gửi xong trước khi tiếp tục
+            await asyncio.sleep(0.5)
         else:
             print(f"🚪 [Mock] Gate opened for {Config.GATE_HOLD_TIME}s.")
 
