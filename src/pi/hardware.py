@@ -12,14 +12,19 @@ class HardwareManager:
             self.light = OutputDevice(Config.LIGHT_PIN, active_high=True)
             self.motor = OutputDevice(Config.MOTOR_PIN, active_high=True)
             # Thử TonalBuzzer (passive buzzer), fallback sang OutputDevice (active buzzer)
-            try:
-                self.buzzer = TonalBuzzer(Config.BUZZER_PIN)
-                self._buzzer_type = "tonal"
-                print("  📢 Buzzer: TonalBuzzer (passive)")
-            except Exception:
-                self.buzzer = OutputDevice(Config.BUZZER_PIN)
-                self._buzzer_type = "digital"
-                print("  📢 Buzzer: OutputDevice (active)")
+            if Config.BUZZER_PIN > 0:
+                try:
+                    self.buzzer = TonalBuzzer(Config.BUZZER_PIN)
+                    self._buzzer_type = "tonal"
+                    print(f"  📢 Buzzer: TonalBuzzer (passive) on pin {Config.BUZZER_PIN}")
+                except Exception:
+                    self.buzzer = OutputDevice(Config.BUZZER_PIN)
+                    self._buzzer_type = "digital"
+                    print(f"  📢 Buzzer: OutputDevice (active) on pin {Config.BUZZER_PIN}")
+            else:
+                self.buzzer = None
+                self._buzzer_type = None
+                print("  📢 Buzzer: Disabled (pin 0)")
             self._light_task = None
             print("✅ Hardware initialized.")
         except Exception as e:
@@ -49,7 +54,7 @@ class HardwareManager:
                 await asyncio.sleep(Config.BUZZER_SHORT_BEEP)
                 self.buzzer.off()
         else:
-            print("🔊 [Mock] Beep: Welcome")
+            pass
 
     async def beep_alert(self):
         if self.buzzer:
@@ -65,7 +70,7 @@ class HardwareManager:
                     self.buzzer.off()
                 await asyncio.sleep(Config.BUZZER_ALERT_BEEP)
         else:
-            print(f"🔊 [Mock] Beep: Alert ({Config.BUZZER_ALERT_COUNT} times)")
+            pass
 
     async def open_gate(self):
         if self.servo:

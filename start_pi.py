@@ -87,10 +87,20 @@ class PiSystem:
         print("🚀 System started. Monitoring and listening for commands...")
 
         while True:
-            # Update last_frame continuously (needed for registration request)
+            # Đảm bảo camera sẵn sàng
+            if not self.video_capture.isOpened():
+                print("⚠️ Camera not ready, retrying...")
+                self.video_capture.open(0)
+                await asyncio.sleep(2)
+                continue
+
             ret, frame = self.video_capture.read()
             if ret:
                 self.last_frame = frame
+            else:
+                print("⚠️ Failed to read from camera.")
+                await asyncio.sleep(1)
+                continue
 
             current_distance = self.hardware.get_distance()
             
