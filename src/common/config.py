@@ -21,7 +21,7 @@ class Config:
     MOTOR_PIN = int(os.getenv("MOTOR_PIN", 27))
     
     # Logic
-    DISTANCE_THRESHOLD = 0.30 # 30cm (gpiozero trả về mét)
+    DISTANCE_THRESHOLD = 0.05  # 5cm (gpiozero trả về mét)
     CAPTURE_DELAY = 1.0 # seconds
     RE_TRIGGER_DELAY = 5.0 # seconds
     GATE_HOLD_TIME = 3.0 # seconds
