@@ -59,6 +59,14 @@ class PiSystem:
                 await self.net.upload_register_image(name, self.reg_frame)
             else:
                 print("⚠️ No frame captured yet.")
+        elif command == "remove":
+            name = params.get("name")
+            print(f"🗑️ Remove request for: {name}")
+            success = await asyncio.to_thread(self.vision.remove_face, name)
+            if success:
+                print(f"✅ Successfully removed: {name}")
+            else:
+                print(f"⚠️ Face not found: {name}")
         elif command == "register_confirm":
             name = params.get("name")
             if self.reg_frame is not None and self.reg_name == name:

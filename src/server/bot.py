@@ -17,51 +17,70 @@ class TelegramManager:
         self.application.add_handler(CommandHandler("motor_off", self._auth_wrapper(self._motor_off)))
         self.application.add_handler(CommandHandler("gate_open", self._auth_wrapper(self._gate_open)))
         self.application.add_handler(CommandHandler("register", self._auth_wrapper(self._register_face)))
+        self.application.add_handler(CommandHandler("remove", self._auth_wrapper(self._remove_face)))
         self.application.add_handler(CallbackQueryHandler(self._button_callback))
 
     def _auth_wrapper(self, func):
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-            if str(update.effective_chat.id) != str(self.chat_id):
-                await update.message.reply_text(f"❌ Bạn không có quyền! ID của bạn: {update.effective_chat.id}")
-                print(f"⚠️ Cảnh báo: Truy cập trái phép từ {update.effective_chat.id}")
+            chat_id = update.effective_chat.id if update.effective_chat else None
+            if str(chat_id) != str(self.chat_id):
+                if update.effective_message:
+                    await update.effective_message.reply_text(f"❌ Bạn không có quyền! ID của bạn: {chat_id}")
+                print(f"⚠️ Cảnh báo: Truy cập trái phép từ {chat_id}")
                 return
             return await func(update, context)
         return wrapper
 
     async def _start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if str(update.effective_chat.id) != str(self.chat_id):
-            await update.message.reply_text(f"🔒 Hệ thống VDK. ID của bạn: {update.effective_chat.id}")
+        chat_id = update.effective_chat.id if update.effective_chat else None
+        if str(chat_id) != str(self.chat_id):
+            if update.effective_message:
+                await update.effective_message.reply_text(f"🔒 Hệ thống VDK. ID của bạn: {chat_id}")
             return
-        await update.message.reply_text("🎮 Hệ thống VDK sẵn sàng!\nCác lệnh:\n/light_on, /light_off\n/motor_on, /motor_off\n/gate_open\n/register [tên]")
+        if update.effective_message:
+            await update.effective_message.reply_text("🎮 Hệ thống VDK sẵn sàng!\nCác lệnh:\n/light_on, /light_off\n/motor_on, /motor_off\n/gate_open\n/register [tên]\n/remove [tên]")
 
     async def _light_on(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if self.command_callback: await self.command_callback("light", {"state": True})
-        await update.message.reply_text("💡 Đã gửi lệnh BẬT đèn.")
+        if update.effective_message: await update.effective_message.reply_text("💡 Đã gửi lệnh BẬT đèn.")
 
     async def _light_off(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if self.command_callback: await self.command_callback("light", {"state": False})
-        await update.message.reply_text("💡 Đã gửi lệnh TẮT đèn.")
+        if update.effective_message: await update.effective_message.reply_text("💡 Đã gửi lệnh TẮT đèn.")
 
     async def _motor_on(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if self.command_callback: await self.command_callback("motor", {"state": True})
-        await update.message.reply_text("⚙️ Đã gửi lệnh BẬT motor.")
+        if update.effective_message: await update.effective_message.reply_text("⚙️ Đã gửi lệnh BẬT motor.")
 
     async def _motor_off(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if self.command_callback: await self.command_callback("motor", {"state": False})
-        await update.message.reply_text("⚙️ Đã gửi lệnh TẮT motor.")
+        if update.effective_message: await update.effective_message.reply_text("⚙️ Đã gửi lệnh TẮT motor.")
 
     async def _gate_open(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if self.command_callback: await self.command_callback("gate", {})
-        await update.message.reply_text("🚪 Đã gửi lệnh MỞ cổng.")
+        if update.effective_message: await update.effective_message.reply_text("🚪 Đã gửi lệnh MỞ cổng.")
 
     async def _register_face(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not context.args:
-            await update.message.reply_text("⚠️ Vui lòng nhập tên người cần đăng ký: /register [tên]")
+            if update.effective_message:
+                await update.effective_message.reply_text("⚠️ Vui lòng nhập tên người cần đăng ký: /register [tên]")
             return
         name = context.args[0]
         if self.command_callback:
             await self.command_callback("register_request", {"name": name})
-        await update.message.reply_text(f"📸 Đang yêu cầu chụp ảnh cho: {name}\nHãy đứng trước webcam...")
+        if update.effective_message:
+            await update.effective_message.reply_text(f"📸 Đang yêu cầu chụp ảnh cho: {name}\nHãy đứng trước webcam...")
+
+    async def _remove_face(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not context.args:
+            if update.effective_message:
+                await update.effective_message.reply_text("⚠️ Vui lòng nhập tên người cần xóa: /remove [tên]")
+            return
+        name = context.args[0]
+        if self.command_callback:
+            await self.command_callback("remove", {"name": name})
+        if update.effective_message:
+            await update.effective_message.reply_text(f"🗑️ Đã gửi lệnh xóa khuôn mặt: {name}")
 
     async def _button_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query

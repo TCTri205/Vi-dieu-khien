@@ -64,3 +64,13 @@ class VisionManager:
                 return self.known_names[first_match_index]
                 
         return "Unknown"
+
+    def remove_face(self, name):
+        """Xóa khuôn mặt và tải lại dữ liệu."""
+        path = os.path.join(Config.FACES_DIR, f"{name}.jpg")
+        if os.path.exists(path):
+            os.remove(path)
+            print(f"🗑️ Removed face: {name}")
+            self._load_known_faces()
+            return True
+        return False
