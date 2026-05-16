@@ -31,10 +31,30 @@ class PiSystem:
         self.hardware = HardwareManager()
         self.vision = VisionManager()
         self.net = PiNetworking()
-        self.video_capture = cv2.VideoCapture(0)
+        self.video_capture = self._open_camera()
         self.last_frame = None
         self.reg_frame = None # Frame to be registered
         self.reg_name = None
+
+    def _open_camera(self):
+        """Mở camera với backend V4L2 và warm-up."""
+        import time
+        print("⏳ Opening camera...")
+        # Dùng CAP_V4L2 tường minh — ổn định hơn trên Raspberry Pi
+        cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+        if cap.isOpened():
+            # Đặt độ phân giải thấp — giảm tải USB bandwidth
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            # Warm-up: đợi camera ổn định
+            time.sleep(2)
+            # Đọc và bỏ 5 frame đầu (frame rác khi mới khởi động)
+            for _ in range(5):
+                cap.read()
+            print("✅ Camera ready.")
+        else:
+            print("⚠️ Camera failed to open!")
+        return cap
 
     async def handle_command(self, command, params):
         """Handle commands received from the server."""
@@ -99,11 +119,11 @@ class PiSystem:
                 _cam_fail_count += 1
                 print(f"⚠️ Failed to read from camera (attempt {_cam_fail_count}).")
                 if _cam_fail_count >= 3:
-                    # Thử release và mở lại camera
+                    # Thử release và mở lại camera với warm-up
                     print("🔄 Releasing and reopening camera...")
                     self.video_capture.release()
-                    await asyncio.sleep(2)
-                    self.video_capture = cv2.VideoCapture(0)
+                    await asyncio.sleep(3)
+                    self.video_capture = await asyncio.to_thread(self._open_camera)
                     _cam_fail_count = 0
                 await asyncio.sleep(1)
                 continue
