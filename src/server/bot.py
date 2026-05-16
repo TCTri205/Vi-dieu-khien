@@ -3,6 +3,17 @@ from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQuer
 from src.common.config import Config
 
 class TelegramManager:
+    HELP_TEXT = (
+        "🎮 Các lệnh có thể chạy:\n"
+        "/light_on - Bật đèn\n"
+        "/light_off - Tắt đèn\n"
+        "/motor_on - Bật motor\n"
+        "/motor_off - Tắt motor\n"
+        "/gate_open - Mở cổng\n"
+        "/register [tên] - Đăng ký khuôn mặt mới\n"
+        "/remove [tên] - Xóa dữ liệu khuôn mặt"
+    )
+
     def __init__(self, command_callback=None):
         self.application = Application.builder().token(Config.TELEGRAM_BOT_TOKEN).build()
         self.chat_id = Config.TELEGRAM_CHAT_ID
@@ -38,7 +49,7 @@ class TelegramManager:
                 await update.effective_message.reply_text(f"🔒 Hệ thống VDK. ID của bạn: {chat_id}")
             return
         if update.effective_message:
-            await update.effective_message.reply_text("🎮 Hệ thống VDK sẵn sàng!\nCác lệnh:\n/light_on, /light_off\n/motor_on, /motor_off\n/gate_open\n/register [tên]\n/remove [tên]")
+            await update.effective_message.reply_text(f"🎮 Hệ thống VDK sẵn sàng!\n{self.HELP_TEXT}")
 
     async def _light_on(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if self.command_callback: await self.command_callback("light", {"state": True})
@@ -129,6 +140,22 @@ class TelegramManager:
         except Exception as e:
             print(f"❌ Telegram registration photo error: {e}")
             return False
+
+    async def send_message(self, text):
+        if not self.chat_id:
+            print("⚠️ TELEGRAM_CHAT_ID is not set. Cannot send message.")
+            return False
+        try:
+            await self.application.bot.send_message(chat_id=self.chat_id, text=text)
+            return True
+        except Exception as e:
+            print(f"❌ Telegram send_message error: {e}")
+            return False
+
+    async def notify_startup(self):
+        print("📢 Sending startup notification to Telegram...")
+        welcome_msg = f"🚀 Server VDK đã khởi động!\n\n{self.HELP_TEXT}"
+        await self.send_message(welcome_msg)
 
     async def start(self):
         await self.application.initialize()

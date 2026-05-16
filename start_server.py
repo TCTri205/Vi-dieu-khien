@@ -71,6 +71,7 @@ class ServerManager:
 async def main():
     manager = ServerManager()
     await manager.bot.start()
+    await manager.bot.notify_startup()
     print(f"🚀 Server listening on port {Config.SERVER_PORT}...")
     async with websockets.serve(manager.handle_connection, "0.0.0.0", Config.SERVER_PORT):
         try:
