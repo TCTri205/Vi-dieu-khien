@@ -120,7 +120,10 @@ class PiSystem:
 
 async def main():
     system = PiSystem()
-    await system.run()
+    try:
+        await system.run()
+    finally:
+        system.hardware.cleanup()
 
 if __name__ == "__main__":
     try:
