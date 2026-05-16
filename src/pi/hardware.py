@@ -10,7 +10,7 @@ class HardwareManager:
             self.sensor = DistanceSensor(echo=Config.ECHO_PIN, trigger=Config.TRIG_PIN)
             self.servo = AngularServo(Config.SERVO_PIN, min_pulse_width=0.0005, max_pulse_width=0.0025)
             self.light = OutputDevice(Config.LIGHT_PIN, active_high=True)
-            self.motor = OutputDevice(Config.MOTOR_PIN, active_high=False)
+            self.motor = OutputDevice(Config.MOTOR_PIN, active_high=True)
             # Thử TonalBuzzer (passive buzzer), fallback sang OutputDevice (active buzzer)
             try:
                 self.buzzer = TonalBuzzer(Config.BUZZER_PIN)
