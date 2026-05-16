@@ -1,11 +1,13 @@
 import asyncio
 import time
+import threading
 import lgpio
 from src.common.config import Config
 
 
 class HardwareManager:
     def __init__(self):
+        self._lock = threading.Lock()  # Bảo vệ lgpio handle khỏi đa luồng
         try:
             # Mở DUY NHẤT 1 lgpio handle — không dùng gpiozero
             self._h = lgpio.gpiochip_open(0)
@@ -61,34 +63,35 @@ class HardwareManager:
         """Đo khoảng cách bằng HC-SR04/HY-SRF05, trả về mét."""
         if not self._h:
             return 1.0
-        try:
-            # Gửi xung trigger 10us
-            lgpio.gpio_write(self._h, self._trig_pin, 1)
-            time.sleep(0.00001)  # 10 microseconds
-            lgpio.gpio_write(self._h, self._trig_pin, 0)
+        with self._lock:  # Khóa handle trong khi đọc cảm biến
+            try:
+                # Gửi xung trigger 10us
+                lgpio.gpio_write(self._h, self._trig_pin, 1)
+                time.sleep(0.00001)  # 10 microseconds
+                lgpio.gpio_write(self._h, self._trig_pin, 0)
 
-            # Chờ echo HIGH (timeout 0.1s)
-            start = time.time()
-            timeout = start + 0.1
-            while lgpio.gpio_read(self._h, self._echo_pin) == 0:
+                # Chờ echo HIGH (timeout 0.1s)
                 start = time.time()
-                if start > timeout:
-                    return 1.0  # Timeout
+                timeout = start + 0.1
+                while lgpio.gpio_read(self._h, self._echo_pin) == 0:
+                    start = time.time()
+                    if start > timeout:
+                        return 1.0  # Timeout
 
-            # Chờ echo LOW
-            end = time.time()
-            timeout2 = end + 0.1
-            while lgpio.gpio_read(self._h, self._echo_pin) == 1:
+                # Chờ echo LOW
                 end = time.time()
-                if end > timeout2:
-                    return 1.0  # Timeout
+                timeout2 = end + 0.1
+                while lgpio.gpio_read(self._h, self._echo_pin) == 1:
+                    end = time.time()
+                    if end > timeout2:
+                        return 1.0  # Timeout
 
-            # Tính khoảng cách (m)
-            duration = end - start
-            distance = (duration * 34300) / 2 / 100  # cm -> m
-            return distance
-        except Exception:
-            return 1.0
+                # Tính khoảng cách (m)
+                duration = end - start
+                distance = (duration * 34300) / 2 / 100  # cm -> m
+                return distance
+            except Exception:
+                return 1.0
 
     # ===== BUZZER =====
     async def beep_welcome(self):

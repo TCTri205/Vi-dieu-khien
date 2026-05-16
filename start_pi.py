@@ -96,7 +96,8 @@ class PiSystem:
                 await asyncio.sleep(1)
                 continue
 
-            current_distance = self.hardware.get_distance()
+            # Chạy get_distance trong thread riêng — tránh block event loop
+            current_distance = await asyncio.to_thread(self.hardware.get_distance)
             
             if current_distance < Config.DISTANCE_THRESHOLD:
                 print(f"⚠️ Obstacle detected! Distance: {current_distance*100:.1f}cm")
