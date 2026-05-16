@@ -13,7 +13,7 @@ class PiNetworking:
 
     async def ensure_connection(self):
         async with self.lock:
-            if self.websocket is None or self.websocket.closed:
+            if self.websocket is None or not self.websocket.open:
                 try:
                     self.websocket = await websockets.connect(self.uri, ping_interval=20)
                     print(f"🔗 Connected to server at {self.uri}")
