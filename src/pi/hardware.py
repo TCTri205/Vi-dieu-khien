@@ -1,35 +1,41 @@
 import asyncio
+import time
 import lgpio
-from gpiozero import DistanceSensor
 from src.common.config import Config
+
 
 class HardwareManager:
     def __init__(self):
         try:
-            # Mở lgpio chip — dùng cho Servo, Relay, LED, Buzzer
+            # Mở DUY NHẤT 1 lgpio handle — không dùng gpiozero
             self._h = lgpio.gpiochip_open(0)
 
-            # ===== Cảm biến siêu âm (giữ gpiozero — hoạt động ổn) =====
-            self.sensor = DistanceSensor(echo=Config.ECHO_PIN, trigger=Config.TRIG_PIN)
+            # ===== Cảm biến siêu âm — lgpio trực tiếp =====
+            self._trig_pin = Config.TRIG_PIN
+            self._echo_pin = Config.ECHO_PIN
+            lgpio.gpio_claim_output(self._h, self._trig_pin)
+            lgpio.gpio_write(self._h, self._trig_pin, 0)
+            lgpio.gpio_claim_input(self._h, self._echo_pin)
+            print(f"  📡 Sensor: lgpio on GPIO {self._trig_pin}/{self._echo_pin}")
 
-            # ===== Servo (GPIO 5) — dùng lgpio.tx_servo trực tiếp =====
+            # ===== Servo (GPIO 5) =====
             self._servo_pin = Config.SERVO_PIN
             lgpio.gpio_claim_output(self._h, self._servo_pin)
-            print(f"  🔧 Servo: lgpio.tx_servo on GPIO {self._servo_pin}")
+            print(f"  🔧 Servo: lgpio on GPIO {self._servo_pin}")
 
-            # ===== LED (GPIO 17) — dùng lgpio trực tiếp =====
+            # ===== LED (GPIO 17) =====
             self._light_pin = Config.LIGHT_PIN
             lgpio.gpio_claim_output(self._h, self._light_pin)
-            lgpio.gpio_write(self._h, self._light_pin, 0)  # Tắt ban đầu
+            lgpio.gpio_write(self._h, self._light_pin, 0)
             print(f"  💡 Light: lgpio on GPIO {self._light_pin}")
 
-            # ===== Motor/Relay (GPIO 27) — dùng lgpio trực tiếp =====
+            # ===== Motor/Relay (GPIO 27) =====
             self._motor_pin = Config.MOTOR_PIN
             lgpio.gpio_claim_output(self._h, self._motor_pin)
-            lgpio.gpio_write(self._h, self._motor_pin, 0)  # Tắt ban đầu
+            lgpio.gpio_write(self._h, self._motor_pin, 0)
             print(f"  ⚙️ Motor: lgpio on GPIO {self._motor_pin}")
 
-            # ===== Buzzer (GPIO 25) — dùng lgpio trực tiếp =====
+            # ===== Buzzer (GPIO 25) =====
             self._buzzer_pin = Config.BUZZER_PIN
             if self._buzzer_pin > 0:
                 lgpio.gpio_claim_output(self._h, self._buzzer_pin)
@@ -38,28 +44,57 @@ class HardwareManager:
                 print("  📢 Buzzer: Disabled (pin 0)")
 
             self._light_task = None
-            print("✅ Hardware initialized (lgpio direct).")
+            print("✅ Hardware initialized (lgpio only).")
         except Exception as e:
             print(f"⚠️ Hardware init error: {e}")
             self._h = None
-            self.sensor = None
+            self._trig_pin = None
+            self._echo_pin = None
             self._servo_pin = None
             self._light_pin = None
             self._motor_pin = None
             self._buzzer_pin = None
             self._light_task = None
 
+    # ===== CẢM BIẾN SIÊU ÂM =====
     def get_distance(self):
-        if self.sensor:
-            return self.sensor.distance
-        return 1.0  # Mock distance
+        """Đo khoảng cách bằng HC-SR04/HY-SRF05, trả về mét."""
+        if not self._h:
+            return 1.0
+        try:
+            # Gửi xung trigger 10us
+            lgpio.gpio_write(self._h, self._trig_pin, 1)
+            time.sleep(0.00001)  # 10 microseconds
+            lgpio.gpio_write(self._h, self._trig_pin, 0)
+
+            # Chờ echo HIGH (timeout 0.1s)
+            start = time.time()
+            timeout = start + 0.1
+            while lgpio.gpio_read(self._h, self._echo_pin) == 0:
+                start = time.time()
+                if start > timeout:
+                    return 1.0  # Timeout
+
+            # Chờ echo LOW
+            end = time.time()
+            timeout2 = end + 0.1
+            while lgpio.gpio_read(self._h, self._echo_pin) == 1:
+                end = time.time()
+                if end > timeout2:
+                    return 1.0  # Timeout
+
+            # Tính khoảng cách (m)
+            duration = end - start
+            distance = (duration * 34300) / 2 / 100  # cm -> m
+            return distance
+        except Exception:
+            return 1.0
 
     # ===== BUZZER =====
     async def beep_welcome(self):
         """Bíp 1 tiếng ngắn khi nhận diện được người quen."""
         if self._h and self._buzzer_pin and self._buzzer_pin > 0:
             print("🔊 Beep: Welcome")
-            # Dùng PWM 1kHz cho passive buzzer (giống diagnose_hw.py)
             lgpio.tx_pwm(self._h, self._buzzer_pin, 1000, 50)
             await asyncio.sleep(Config.BUZZER_SHORT_BEEP)
             lgpio.tx_pwm(self._h, self._buzzer_pin, 0, 0)
@@ -74,20 +109,17 @@ class HardwareManager:
                 lgpio.tx_pwm(self._h, self._buzzer_pin, 0, 0)
                 await asyncio.sleep(Config.BUZZER_ALERT_BEEP)
 
-    # ===== SERVO (Cửa tự động) =====
+    # ===== SERVO =====
     async def open_gate(self):
         """Mở cửa: Servo quay 90° → giữ → đóng lại 0°."""
         if self._h and self._servo_pin is not None:
             print(f"🚪 Opening gate for {Config.GATE_HOLD_TIME}s...")
-            # 2000us ≈ 90° (giống diagnose_hw.py dùng lgpio.tx_servo)
             lgpio.tx_servo(self._h, self._servo_pin, 2000)
             print("🚪 Servo -> 90° (open)")
             await asyncio.sleep(Config.GATE_HOLD_TIME)
-            # 1000us ≈ 0° (giống diagnose_hw.py)
             lgpio.tx_servo(self._h, self._servo_pin, 1000)
             print("🚪 Servo -> 0° (closed)")
             await asyncio.sleep(0.5)
-            # Tắt xung servo để tránh jitter
             lgpio.tx_servo(self._h, self._servo_pin, 0)
         else:
             print(f"🚪 [Mock] Gate opened for {Config.GATE_HOLD_TIME}s.")
@@ -95,7 +127,6 @@ class HardwareManager:
     # ===== ĐÈN LED =====
     async def control_light(self, state=True, duration=0):
         """Bật/tắt đèn LED."""
-        # Hủy task tự động tắt cũ nếu có
         if self._light_task:
             self._light_task.cancel()
             self._light_task = None
@@ -134,7 +165,6 @@ class HardwareManager:
         """Giải phóng tài nguyên GPIO."""
         if self._h is not None:
             try:
-                # Tắt tất cả trước khi giải phóng
                 for pin in [self._light_pin, self._motor_pin]:
                     if pin is not None:
                         lgpio.gpio_write(self._h, pin, 0)
@@ -145,6 +175,10 @@ class HardwareManager:
                 if self._buzzer_pin and self._buzzer_pin > 0:
                     lgpio.tx_pwm(self._h, self._buzzer_pin, 0, 0)
                     lgpio.gpio_free(self._h, self._buzzer_pin)
+                if self._trig_pin is not None:
+                    lgpio.gpio_free(self._h, self._trig_pin)
+                if self._echo_pin is not None:
+                    lgpio.gpio_free(self._h, self._echo_pin)
                 lgpio.gpiochip_close(self._h)
                 print("🧹 GPIO cleaned up.")
             except Exception as e:
