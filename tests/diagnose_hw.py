@@ -8,7 +8,7 @@ import sys
 
 # ===== BẢNG THAM CHIẾU PIN =====
 # GPIO 17 = Chân vật lý 11  (LED - ĐÃ HOẠT ĐỘNG)
-# GPIO 18 = Chân vật lý 12  (Servo signal)
+# GPIO 5 = Chân vật lý 29   (Servo signal)
 # GPIO 25 = Chân vật lý 22  (Buzzer)
 # GPIO 27 = Chân vật lý 13  (Relay - ĐÃ HOẠT ĐỘNG)
 # GPIO 23 = Chân vật lý 16  (Trig)
@@ -40,7 +40,7 @@ test_pins = {
     17: "LED (đã biết hoạt động)",
     27: "Relay (đã biết hoạt động)",
     25: "Buzzer",
-    18: "Servo signal",
+    5: "Servo signal",
 }
 
 print("\n[BƯỚC 2] Test OUTPUT từng chân GPIO bằng lgpio trực tiếp...")
@@ -78,21 +78,21 @@ try:
 except Exception as e:
     print(f"    ❌ Lỗi PWM Buzzer: {e}\n")
 
-input("  Nhấn ENTER để test PWM trên GPIO 18 (Servo - 50Hz)...")
+input("  Nhấn ENTER để test PWM trên GPIO 5 (Servo - 50Hz)...")
 try:
-    lgpio.gpio_claim_output(h, 18)
+    lgpio.gpio_claim_output(h, 5)
     # Servo cần tín hiệu: tx_servo(handle, gpio, pulse_width_us)
-    lgpio.tx_servo(h, 18, 1500)  # 1500us = vị trí giữa
+    lgpio.tx_servo(h, 5, 1500)  # 1500us = vị trí giữa
     print("    -> Servo -> Giữa (1500us)")
     time.sleep(2)
-    lgpio.tx_servo(h, 18, 2000)  # 2000us = ~90 độ
+    lgpio.tx_servo(h, 5, 2000)  # 2000us = ~90 độ
     print("    -> Servo -> 90° (2000us)")
     time.sleep(2)
-    lgpio.tx_servo(h, 18, 1000)  # 1000us = ~0 độ
+    lgpio.tx_servo(h, 5, 1000)  # 1000us = ~0 độ
     print("    -> Servo -> 0° (1000us)")
     time.sleep(2)
-    lgpio.tx_servo(h, 18, 0)  # Tắt
-    lgpio.gpio_free(h, 18)
+    lgpio.tx_servo(h, 5, 0)  # Tắt
+    lgpio.gpio_free(h, 5)
     print("    ✅ PWM Servo test xong.\n")
 except Exception as e:
     print(f"    ❌ Lỗi PWM Servo: {e}\n")
@@ -109,9 +109,9 @@ print("     Chạy lại test GPIO 17 ở Bước 2")
 print("     -> Còi kêu: GPIO 25 cắm sai chân")
 print("     -> Còi im:  Còi hỏng hoặc cần nguồn mạnh hơn")
 print()
-print("  b) RÚT dây tín hiệu Servo khỏi GPIO 18 (vật lý 12)")
+print("  b) RÚT dây tín hiệu Servo khỏi GPIO 5 (vật lý 29)")
 print("     CẮM vào GPIO 17 (vật lý 11)")
-print("     -> Servo rung/nhúc: GPIO 18 cắm sai")
+print("     -> Servo rung/nhúc: GPIO 5 cắm sai")
 print("     -> Servo im: Kiểm tra nguồn pin 6V")
 print()
 

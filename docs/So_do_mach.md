@@ -23,7 +23,7 @@ Hãy chuẩn bị Breadboard và nối từ từ theo danh sách sau:
     
 - **Dây Nâu (GND):** Nối vào cực Âm (-) của khay pin (Mass chung).
     
-- **Dây Cam (Tín hiệu):** Nối vào chân **GPIO 18** của Pi (Chân này hỗ trợ phát xung PWM phần cứng giúp cửa xoay mượt).
+- **Dây Cam (Tín hiệu):** Nối vào chân **GPIO 5** (Chân vật lý 29) của Pi.
     
 
 ### B. Module Relay 1 kênh & Quạt mini
