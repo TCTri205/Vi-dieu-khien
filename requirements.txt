@@ -1,0 +1,8 @@
+opencv-python
+face-recognition
+websockets
+python-telegram-bot>=20.0
+python-dotenv
+gpiozero
+RPi.GPIO
+numpy
