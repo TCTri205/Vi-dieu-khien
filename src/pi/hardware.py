@@ -114,14 +114,14 @@ class HardwareManager:
 
     # ===== SERVO =====
     async def open_gate(self):
-        """Mở cửa: Servo quay 90° → giữ → đóng lại 0°."""
+        """Mở cửa: Servo quay từ 2000us về 1000us (đảo chiều) -> giữ -> trả về 2000us."""
         if self._h and self._servo_pin is not None:
             print(f"🚪 Opening gate for {Config.GATE_HOLD_TIME}s...")
-            lgpio.tx_servo(self._h, self._servo_pin, 2000)
-            print("🚪 Servo -> 90° (open)")
-            await asyncio.sleep(Config.GATE_HOLD_TIME)
             lgpio.tx_servo(self._h, self._servo_pin, 1000)
-            print("🚪 Servo -> 0° (closed)")
+            print("🚪 Servo -> 0° (open)")
+            await asyncio.sleep(Config.GATE_HOLD_TIME)
+            lgpio.tx_servo(self._h, self._servo_pin, 2000)
+            print("🚪 Servo -> 90° (closed)")
             await asyncio.sleep(0.5)
             lgpio.tx_servo(self._h, self._servo_pin, 0)
         else:
