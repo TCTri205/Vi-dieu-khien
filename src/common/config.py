@@ -15,14 +15,22 @@ class Config:
     # Pi Hardware GPIO
     TRIG_PIN = int(os.getenv("TRIG_PIN", 23))
     ECHO_PIN = int(os.getenv("ECHO_PIN", 24))
-    SERVO_PIN = int(os.getenv("SERVO_PIN", 5))
+    SERVO_PIN = int(os.getenv("SERVO_PIN", 18))
+    BUZZER_PIN = int(os.getenv("BUZZER_PIN", 25))
     LIGHT_PIN = int(os.getenv("LIGHT_PIN", 17))
     MOTOR_PIN = int(os.getenv("MOTOR_PIN", 27))
     
     # Logic
-    DISTANCE_THRESHOLD = 0.03 # 3cm
+    DISTANCE_THRESHOLD = 0.30 # 30cm (gpiozero trả về mét)
     CAPTURE_DELAY = 1.0 # seconds
     RE_TRIGGER_DELAY = 5.0 # seconds
+    GATE_HOLD_TIME = 5.0 # seconds
+    LIGHT_AUTO_OFF_TIME = 3600 # 1 hour (seconds)
+    
+    # Buzzer timing
+    BUZZER_SHORT_BEEP = 0.2
+    BUZZER_ALERT_BEEP = 0.1
+    BUZZER_ALERT_COUNT = 3
     
     # Paths
     ADMIN_FACE_PATH = "data/faces/admin.jpg"

@@ -14,13 +14,20 @@ async def process_detection(request_id, frame, vision, net, hardware):
     # Luồng 2: Nhận diện và thông báo kết quả
     result = await asyncio.to_thread(vision.recognize, frame)
     print(f"🎯 [{request_id}] Result: {result}")
-    
     await net.upload_result(request_id, result)
     
     if result == "Admin":
-        # Await các thao tác phần cứng (đã được chuyển sang async)
-        await hardware.open_gate()
-        await hardware.control_light(state=True)
+        # Thực hiện các thao tác chào mừng
+        await hardware.beep_welcome()
+        
+        # Chạy song song: Mở cửa và Bật đèn (đèn sáng ngay khi cửa mở)
+        await asyncio.gather(
+            hardware.open_gate(),
+            hardware.control_light(state=True)
+        )
+    else:
+        # Người lạ: Cảnh báo
+        await hardware.beep_alert()
     
     await upload_task
 

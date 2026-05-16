@@ -35,3 +35,6 @@ ENV/
 # Local data
 data/faces/*
 !data/faces/README.md
+
+.omg/
+.codeboarding/

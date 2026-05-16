@@ -4,5 +4,5 @@ websockets
 python-telegram-bot>=20.0
 python-dotenv
 gpiozero
-RPi.GPIO
+RPi.GPIO; sys_platform == 'linux'
 numpy
