@@ -29,7 +29,7 @@ cd ~/vdk_project
 
 # Cài đặt các thư viện hệ thống cần thiết (Rất quan trọng cho dlib và opencv)
 sudo apt-get update
-sudo apt-get install -y cmake libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev
+sudo apt-get install -y cmake python3-dev libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev swig liblgpio-dev
 
 # Tạo môi trường ảo riêng (Để tránh xung đột thư viện với PBL5)
 python3 -m venv venv_vdk
@@ -38,6 +38,10 @@ source venv_vdk/bin/activate
 # Cài đặt các thư viện từ requirements.txt
 pip install --upgrade pip
 pip install -r requirements.txt
+ 
++> [!TIP]
++> Quá trình cài đặt `face-recognition` (cụ thể là biên dịch `dlib`) có thể mất từ **30 - 60 phút** trên Raspberry Pi. Hãy kiên nhẫn và đảm bảo bạn đã bật **Swap 2GB** (ở bước 4) để tránh lỗi thiếu RAM (Out of Memory).
++
 ```
 
 ---
