@@ -17,16 +17,12 @@ async def process_detection(request_id, frame, vision, net, hardware):
     await net.upload_result(request_id, result)
     
     if result not in ["Unknown", "No face data"]:
-        # Thực hiện các thao tác chào mừng
-        await hardware.beep_welcome()
-        
-        # Mở cửa trước, sau đó bật đèn và quạt
+        # Delay 0.5s sau nhận diện
+        await asyncio.sleep(0.5)
+        # Mở cửa (3s), đóng cửa, rồi mới bật đèn và quạt
         await hardware.open_gate()
         await hardware.control_light(state=True)
         await hardware.control_motor(state=True)
-    else:
-        # Người lạ hoặc chưa có dữ liệu: Cảnh báo
-        await hardware.beep_alert()
     
     await upload_task
 

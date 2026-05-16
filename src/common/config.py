@@ -24,7 +24,7 @@ class Config:
     DISTANCE_THRESHOLD = 0.30 # 30cm (gpiozero trả về mét)
     CAPTURE_DELAY = 1.0 # seconds
     RE_TRIGGER_DELAY = 5.0 # seconds
-    GATE_HOLD_TIME = 5.0 # seconds
+    GATE_HOLD_TIME = 3.0 # seconds
     LIGHT_AUTO_OFF_TIME = 3600 # 1 hour (seconds)
     
     # Buzzer timing
