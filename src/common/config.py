@@ -33,4 +33,4 @@ class Config:
     BUZZER_ALERT_COUNT = 3
     
     # Paths
-    ADMIN_FACE_PATH = "data/faces/admin.jpg"
+    FACES_DIR = "data/faces/"

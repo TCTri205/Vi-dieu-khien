@@ -9,6 +9,7 @@ class ServerManager:
     def __init__(self):
         self.bot = TelegramManager(command_callback=self.relay_command)
         self.pending_requests = {}
+        self.pending_registrations = {}
         self.active_clients = set()
 
     async def handle_connection(self, websocket, path=None):
@@ -20,6 +21,13 @@ class ServerManager:
                 req_id = data.get("request_id")
                 msg_type = data.get("type")
                 
+                if msg_type == "register_image":
+                    name = data.get("name")
+                    image_data = base64.b64decode(data.get("data"))
+                    print(f"📸 Received registration image for {name}")
+                    await self.bot.send_registration_photo(name, image_data)
+                    continue
+
                 if not req_id: continue
                 
                 if req_id not in self.pending_requests:

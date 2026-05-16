@@ -40,6 +40,12 @@ class PiNetworking:
         payload = {"request_id": request_id, "type": "result", "data": result}
         await self.send_payload(payload)
 
+    async def upload_register_image(self, name, frame):
+        _, buffer = cv2.imencode('.jpg', frame)
+        img_str = base64.b64encode(buffer).decode('utf-8')
+        payload = {"type": "register_image", "name": name, "data": img_str}
+        await self.send_payload(payload)
+
     async def listen_for_commands(self, callback):
         """Listen for incoming commands from the server."""
         while True:
