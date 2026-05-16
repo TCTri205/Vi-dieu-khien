@@ -20,12 +20,10 @@ async def process_detection(request_id, frame, vision, net, hardware):
         # Thực hiện các thao tác chào mừng
         await hardware.beep_welcome()
         
-        # Chạy song song: Mở cửa, Bật đèn, Bật quạt
-        await asyncio.gather(
-            hardware.open_gate(),
-            hardware.control_light(state=True),
-            hardware.control_motor(state=True)
-        )
+        # Mở cửa trước, sau đó bật đèn và quạt
+        await hardware.open_gate()
+        await hardware.control_light(state=True)
+        await hardware.control_motor(state=True)
     else:
         # Người lạ hoặc chưa có dữ liệu: Cảnh báo
         await hardware.beep_alert()
