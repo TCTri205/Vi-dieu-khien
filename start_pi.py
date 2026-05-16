@@ -80,38 +80,51 @@ class PiSystem:
         
         print("🚀 System started. Monitoring and listening for commands...")
 
+        _cam_fail_count = 0
+
         while True:
             # Đảm bảo camera sẵn sàng
             if not self.video_capture.isOpened():
                 print("⚠️ Camera not ready, retrying...")
-                self.video_capture.open(0)
+                await asyncio.to_thread(self.video_capture.open, 0)
                 await asyncio.sleep(2)
                 continue
 
-            ret, frame = self.video_capture.read()
+            # Chạy camera.read() trong thread riêng — tránh block event loop
+            ret, frame = await asyncio.to_thread(self.video_capture.read)
             if ret:
                 self.last_frame = frame
+                _cam_fail_count = 0
             else:
-                print("⚠️ Failed to read from camera.")
+                _cam_fail_count += 1
+                print(f"⚠️ Failed to read from camera (attempt {_cam_fail_count}).")
+                if _cam_fail_count >= 3:
+                    # Thử release và mở lại camera
+                    print("🔄 Releasing and reopening camera...")
+                    self.video_capture.release()
+                    await asyncio.sleep(2)
+                    self.video_capture = cv2.VideoCapture(0)
+                    _cam_fail_count = 0
                 await asyncio.sleep(1)
                 continue
 
             # Chạy get_distance trong thread riêng — tránh block event loop
             current_distance = await asyncio.to_thread(self.hardware.get_distance)
-            
+
             if current_distance < Config.DISTANCE_THRESHOLD:
                 print(f"⚠️ Obstacle detected! Distance: {current_distance*100:.1f}cm")
                 await asyncio.sleep(Config.CAPTURE_DELAY)
-                
-                # Re-read to get a fresh frame after delay
-                ret, frame = self.video_capture.read()
+
+                # Re-read để lấy frame mới sau delay
+                ret, frame = await asyncio.to_thread(self.video_capture.read)
                 if ret:
                     request_id = str(uuid.uuid4())[:8]
                     asyncio.create_task(process_detection(request_id, frame, self.vision, self.net, self.hardware))
-                
+
                 await asyncio.sleep(Config.RE_TRIGGER_DELAY)
-            
+
             await asyncio.sleep(0.05)
+
 
 async def main():
     system = PiSystem()
