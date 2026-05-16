@@ -13,12 +13,22 @@ class PiNetworking:
 
     async def ensure_connection(self):
         async with self.lock:
-            if self.websocket is None or not self.websocket.open:
+            # Check if connection exists and is strictly OPEN
+            # .state.name == "OPEN" works for both legacy and new asyncio APIs
+            is_open = False
+            if self.websocket is not None:
+                try:
+                    is_open = self.websocket.state.name == "OPEN"
+                except AttributeError:
+                    is_open = False
+            
+            if not is_open:
                 try:
                     self.websocket = await websockets.connect(self.uri, ping_interval=20)
                     print(f"🔗 Connected to server at {self.uri}")
                 except Exception as e:
                     print(f"❌ Connection failed: {e}")
+                    self.websocket = None
                     return False
         return True
 
@@ -49,17 +59,17 @@ class PiNetworking:
     async def listen_for_commands(self, callback):
         """Listen for incoming commands from the server."""
         while True:
-            if await self.ensure_connection():
-                try:
+            try:
+                if await self.ensure_connection():
                     message = await self.websocket.recv()
                     data = json.loads(message)
                     if data.get("type") == "command":
                         await callback(data.get("command"), data.get("params", {}))
-                except websockets.exceptions.ConnectionClosed:
-                    print("⚠️ Connection closed by server. Retrying...")
-                    self.websocket = None
-                except Exception as e:
-                    print(f"⚠️ Listen error: {e}")
-                    await asyncio.sleep(1)
-            else:
-                await asyncio.sleep(5)
+                else:
+                    await asyncio.sleep(5)
+            except websockets.exceptions.ConnectionClosed:
+                print("⚠️ Connection closed by server. Retrying...")
+                self.websocket = None
+            except Exception as e:
+                print(f"⚠️ Listen error: {e}")
+                await asyncio.sleep(1)
